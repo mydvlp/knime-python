@@ -63,7 +63,7 @@ import org.knime.core.node.defaultnodesettings.SettingsModelString;
  * @author Marcel Wiedenmann, KNIME GmbH, Konstanz, Germany
  * @author Christian Dietz, KNIME GmbH, Konstanz, Germany
  */
-final class InstallationStatusDisplayPanel extends Composite {
+public final class InstallationStatusDisplayPanel extends Composite {
 
     /**
      * @param infoMessageModel May be updated asynchronously, that is, in a non-UI thread. May contain or be set to a

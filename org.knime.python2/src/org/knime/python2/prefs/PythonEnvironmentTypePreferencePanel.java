@@ -65,7 +65,7 @@ import org.knime.python2.config.PythonEnvironmentType;
  * @author Marcel Wiedenmann, KNIME GmbH, Konstanz, Germany
  * @author Christian Dietz, KNIME GmbH, Konstanz, Germany
  */
-final class PythonEnvironmentTypePreferencePanel extends AbstractEnvironmentTypePanel<Composite> {
+public final class PythonEnvironmentTypePreferencePanel extends AbstractEnvironmentTypePanel<Composite> {
 
     public PythonEnvironmentTypePreferencePanel(final PythonEnvironmentTypeConfig config, final Composite parent) {
         super(config, parent);
