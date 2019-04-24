@@ -64,6 +64,8 @@ except Exception:
 from distutils.version import LooseVersion
 
 _default_min_pandas_version = '0.20.0'
+SEPARATOR = '__!__separator__!__'
+SUCCESS_MESSAGE = '__!__installation_tests_finished__!__'
 
 
 class PythonKernelTester(object):
@@ -281,15 +283,21 @@ except:
 
         :return: The error report as a list of strings.
         """
-        try:
-            report_lines = OrderedDict.fromkeys(self._messages)
-        except Exception:
+#         try:
+#             report_lines = OrderedDict.fromkeys(self._messages)
+#         except Exception:
             # Old Python 2 versions don't have OrderedDict.
-            report_lines = self._messages
+        report_lines = self._messages
         return list(report_lines)
 
+    def add_separator_to_report(self):
+        """
+        Adds a separator message to the report which can be detected by applications parsing the report.
+        """
+        self._add_to_messages(SEPARATOR)
 
 # Default installation test:
+
 
 class _DefaultPythonKernelTester(PythonKernelTester):
 
@@ -298,7 +306,7 @@ class _DefaultPythonKernelTester(PythonKernelTester):
 
     def check_python(self, major_version, min_version=None, min_inclusive=True, max_version=None,
                      max_inclusive=True):
-        print('Python version: ' + PythonKernelTester._get_python_version())  # Expected by Java side.
+        self._add_to_messages('Python version: ' + PythonKernelTester._get_python_version())  # Expected by Java side.
         return super(_DefaultPythonKernelTester, self).check_python(major_version, min_version, min_inclusive,
                                                                     max_version,
                                                                     max_inclusive)
@@ -332,26 +340,42 @@ class _DefaultPythonKernelTester(PythonKernelTester):
         self.check_module('pandas', min_version=min_pandas_version, class_names=['DataFrame'])
         # Additional modules.
         if additional_required_modules is not None:
-            for module in additional_required_modules:
-                module_name, min_version, min_inclusive, max_version, max_inclusive = module
-                self.check_module(module_name, min_version, min_inclusive, max_version, max_inclusive)
+            self.check_additional_modules(additional_required_modules)
+
+    def check_additional_modules(self, additional_modules):
+        """
+        Checks if the additional modules are available in the environment.
+
+        :param additional_required_modules: A list of 5-tuples (module_name, min_version, min_inclusive, max_version,
+        max_inclusive) that specifies additional required modules to test. All tuple entries but module_name may be None.
+        """
+        for module in additional_modules:
+            module_name, min_version, min_inclusive, max_version, max_inclusive = module
+            self.check_module(module_name, min_version, min_inclusive, max_version, max_inclusive)
 
 
 def _perform_default_installation_test():
-    major_python_version, min_python_version, max_python_version, additional_required_modules = _parse_program_args()
+    major_python_version, min_python_version, max_python_version, additional_required_modules, additional_optional_modules = \
+                                                                            _parse_program_args()
 
     tester = _DefaultPythonKernelTester()
+    tester.add_separator_to_report()
     tester.check_python(major_python_version, min_version=min_python_version, min_inclusive=True,
                         max_version=max_python_version,
                         max_inclusive=False)
+    tester.add_separator_to_report()
     tester.check_required_modules(additional_required_modules)
+    tester.add_separator_to_report()
+    tester.check_additional_modules(additional_optional_modules)
 
     report = tester.get_report_lines()
     report = "\n".join(report)
     print(report)  # Expected by Java side.
+    print(SUCCESS_MESSAGE)
     sys.stdout.flush()
 
 
+# TODO fix docstring
 def _parse_program_args():
     """
     Parses the program's command line arguments. They are expected to be of the form major_python_version
@@ -437,8 +461,9 @@ def _parse_program_args():
     min_python_version = pos_args[1] if len(pos_args) > 1 else None
     max_python_version = pos_args[2] if len(pos_args) > 2 else None
     additional_required_modules = [_parse_additional_required_module(m) for m in kw_args.get('-m', [])]
+    additional_optional_modules = [_parse_additional_required_module(o) for o in kw_args.get('-o', [])]
 
-    return major_python_version, min_python_version, max_python_version, additional_required_modules
+    return major_python_version, min_python_version, max_python_version, additional_required_modules, additional_optional_modules
 
 
 if __name__ == "__main__":
